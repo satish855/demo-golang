@@ -1,0 +1,31 @@
+base_config:
+  app_name: "user_service"
+  app_tokens:
+    - QA_TOKEN
+    - DEV_TOKEN
+    - UAT_TOKEN
+
+  server_config:
+    address: "0.0.0.0"
+    port: 2000
+    keep_alive_time: 10
+    keep_alive_time_out: 10
+    metrics_port: 2002
+
+  gateway_config:
+    enabled: true
+    address: "0.0.0.0"
+    port: 2001
+    url: "/user-svc"
+    swagger_file: ""
+    endpoint: "/user-svc/"
+
+  database_config:
+    type: "mysql"
+    host_name: "165.22.214.207"
+    port: 3306
+    user_name: user_service_user
+    database_name: user-service
+
+  trace_provider_url: "http://0.0.0.0:14268/api/traces"
+  log_level: DEBUG

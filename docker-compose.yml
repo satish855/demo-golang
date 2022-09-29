@@ -1,0 +1,46 @@
+service: '3.7'
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    networks:
+      - jaeger
+  hotrod:
+    image: jaegertracing/example-hotrod:latest
+    ports:
+      - "8080:8080"
+    command: [ "all" ]
+    environment:
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+    networks:
+      - jaeger
+    depends_on:
+      - jaeger
+
+  db-5.7:
+    platform: linux/x86_64
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'oauthdb'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - my-db:/var/lib/mysql
+    networks:
+      - jaeger
+
+networks:
+  jaeger:
+
+volumes:
+  my-db:

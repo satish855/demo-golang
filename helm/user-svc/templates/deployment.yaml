@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "chart.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "chart.fullname" . }}
+    app.kubernetes.io/name: {{ include "chart.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    "sidecar.jaegertracing.io/inject": "true"
+spec:
+  revisionHistoryLimit: 0
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.maxSurge }}
+      maxUnavailable: {{ .Values.maxUnavailable }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+        app.kubernetes.io/name: {{ include "chart.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '2001'
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      containers:
+        - name: {{ .Release.Name }}
+          image: {{ .Values.dockerImage }}:{{ .Values.version }}
+          imagePullPolicy: Always
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end}}
+          env:
+            - name: DATABASE_PASSWORD
+              value: olPoIHNpnFzoNVo7
+            - name: CONFIG_PATH
+              value: user_service_dev.yml
+            - name: APP_NAME
+              value: user_service
+            - name: APP_VERSION
+              value: 0.0.1
+            - name: APP_ENV
+              value: staging
+          resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.app.grpcPort }}
+              protocol: {{ .Values.grpcProtocol }}
+            - name: http
+              containerPort: {{ .Values.app.httpPort }}
+              protocol: {{ .Values.httpProtocol }}
+          livenessProbe:
+            httpGet:
+              path: /user_svc/ping
+              port: {{ .Values.app.httpPort }}
+            initialDelaySeconds: 1
+            periodSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: /user_svc/ready
+              port: {{ .Values.app.httpPort }}
+            initialDelaySeconds: 1
+            periodSeconds: 1
